@@ -1,0 +1,32 @@
+name: 고구마 자동 수령 🍠
+
+on:
+  schedule:
+    - cron: '0 */5 * * *'  # 5시간마다 자동 실행
+  workflow_dispatch:        # 수동 실행도 가능
+
+jobs:
+  claim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 고구마 수령 1 (wing_page)
+        run: |
+          curl -s -X POST "https://www.pato114.com/sweet.php" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: */*" \
+            -H "Origin: https://www.pato114.com" \
+            -H "Referer: https://www.pato114.com/main.php" \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36" \
+            -H "Cookie: ${{ secrets.PATO_COOKIE }}" \
+            --data "action=claim_sweet_potato&location_id=wing_page"
+
+      - name: 고구마 수령 2 (main_page)
+        run: |
+          curl -s -X POST "https://www.pato114.com/sweet.php" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: */*" \
+            -H "Origin: https://www.pato114.com" \
+            -H "Referer: https://www.pato114.com/main.php" \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36" \
+            -H "Cookie: ${{ secrets.PATO_COOKIE }}" \
+            --data "action=claim_sweet_potato&location_id=main_page"
