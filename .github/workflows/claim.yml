@@ -51,51 +51,16 @@ jobs:
           session = requests.Session()
           session.headers.update(headers)
 
-          # 출석부 페이지에서 token, uid, 명언 자동으로 가져오기
+          # 출석부 페이지 가져오기
           res = session.get("https://www.pato114.com/bbs/board.php?bo_table=chul")
           soup = BeautifulSoup(res.text, "html.parser")
 
-          token = soup.find("input", {"name": "token"})
-          uid = soup.find("input", {"name": "uid"})
-          quote = soup.find("textarea", {"name": "wr_content"})
+          # 디버그: 모든 input 필드 출력
+          print("=== 페이지의 모든 input 필드 ===")
+          for inp in soup.find_all("input"):
+              print(f"name={inp.get('name')}, value={inp.get('value')}, type={inp.get('type')}")
 
-          if not token or not uid:
-              print("❌ token 또는 uid를 찾지 못했어요")
-              exit(1)
-
-          token_val = token["value"]
-          uid_val = uid["value"]
-          quote_val = quote.get_text(strip=True) if quote else "희망은 백일몽이다. - 아리스토텔레스"
-
-          print(f"📝 오늘의 명언: {quote_val}")
-
-          # 오늘 날짜
-          today = datetime.datetime.now().strftime("%Y%m%d")
-
-          # 출석 제출
-          data = {
-              "token": token_val,
-              "uid": uid_val,
-              "w": "",
-              "is_direct": "1",
-              "is_subject": "1",
-              "wr_1": today,
-              "bo_table": "chul",
-              "wr_subject": "1",
-              "as_icon": "",
-              "wr_content": quote_val,
-              "wr_link1": "",
-          }
-
-          res2 = session.post(
-              "https://www.pato114.com/bbs/write_update.php",
-              data=data,
-              allow_redirects=False
-          )
-
-          print(f"출석체크 결과: {res2.status_code}")
-          if res2.status_code in [200, 302]:
-              print("✅ 출석체크 성공!")
-          else:
-              print("❌ 출석체크 실패")
+          print("=== 페이지의 모든 textarea 필드 ===")
+          for ta in soup.find_all("textarea"):
+              print(f"name={ta.get('name')}, value={ta.get_text(strip=True)[:50]}")
           EOF
