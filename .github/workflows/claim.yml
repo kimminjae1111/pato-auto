@@ -51,12 +51,13 @@ jobs:
           session = requests.Session()
           session.headers.update(headers)
 
-          # 출석부 페이지에서 token 가져오기
+          # 출석부 페이지에서 token, uid, 명언 자동으로 가져오기
           res = session.get("https://www.pato114.com/bbs/board.php?bo_table=chul")
           soup = BeautifulSoup(res.text, "html.parser")
 
           token = soup.find("input", {"name": "token"})
           uid = soup.find("input", {"name": "uid"})
+          quote = soup.find("textarea", {"name": "wr_content"})
 
           if not token or not uid:
               print("❌ token 또는 uid를 찾지 못했어요")
@@ -64,6 +65,9 @@ jobs:
 
           token_val = token["value"]
           uid_val = uid["value"]
+          quote_val = quote.get_text(strip=True) if quote else "희망은 백일몽이다. - 아리스토텔레스"
+
+          print(f"📝 오늘의 명언: {quote_val}")
 
           # 오늘 날짜
           today = datetime.datetime.now().strftime("%Y%m%d")
@@ -79,7 +83,7 @@ jobs:
               "bo_table": "chul",
               "wr_subject": "1",
               "as_icon": "",
-              "wr_content": "희망은 백일몽이다. - 아리스토텔레스",
+              "wr_content": quote_val,
               "wr_link1": "",
           }
 
