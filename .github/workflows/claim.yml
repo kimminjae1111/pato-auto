@@ -2,8 +2,9 @@ name: 고구마 자동 수령 🍠
 
 on:
   schedule:
-    - cron: '0 */5 * * *'  # 5시간마다 자동 실행
-  workflow_dispatch:        # 수동 실행도 가능
+    - cron: '0 */5 * * *'   # 5시간마다 고구마 수령
+    - cron: '0 15 * * *'    # 매일 한국시간 자정 출석체크 (UTC 15:00 = KST 00:00)
+  workflow_dispatch:         # 수동 실행도 가능
 
 jobs:
   claim:
@@ -30,3 +31,67 @@ jobs:
             -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36" \
             -H "Cookie: ${{ secrets.PATO_COOKIE }}" \
             --data "action=claim_sweet_potato&location_id=main_page"
+
+      - name: 출석체크 🗓️
+        run: |
+          pip install requests beautifulsoup4 -q
+          python3 << 'EOF'
+          import requests
+          from bs4 import BeautifulSoup
+          import datetime
+
+          cookie = "${{ secrets.PATO_COOKIE }}"
+          headers = {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+              "Cookie": cookie,
+              "Referer": "https://www.pato114.com/bbs/board.php?bo_table=chul",
+              "Origin": "https://www.pato114.com",
+          }
+
+          session = requests.Session()
+          session.headers.update(headers)
+
+          # 출석부 페이지에서 token 가져오기
+          res = session.get("https://www.pato114.com/bbs/board.php?bo_table=chul")
+          soup = BeautifulSoup(res.text, "html.parser")
+
+          token = soup.find("input", {"name": "token"})
+          uid = soup.find("input", {"name": "uid"})
+
+          if not token or not uid:
+              print("❌ token 또는 uid를 찾지 못했어요")
+              exit(1)
+
+          token_val = token["value"]
+          uid_val = uid["value"]
+
+          # 오늘 날짜
+          today = datetime.datetime.now().strftime("%Y%m%d")
+
+          # 출석 제출
+          data = {
+              "token": token_val,
+              "uid": uid_val,
+              "w": "",
+              "is_direct": "1",
+              "is_subject": "1",
+              "wr_1": today,
+              "bo_table": "chul",
+              "wr_subject": "1",
+              "as_icon": "",
+              "wr_content": "희망은 백일몽이다. - 아리스토텔레스",
+              "wr_link1": "",
+          }
+
+          res2 = session.post(
+              "https://www.pato114.com/bbs/write_update.php",
+              data=data,
+              allow_redirects=False
+          )
+
+          print(f"출석체크 결과: {res2.status_code}")
+          if res2.status_code in [200, 302]:
+              print("✅ 출석체크 성공!")
+          else:
+              print("❌ 출석체크 실패")
+          EOF
